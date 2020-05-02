@@ -3,10 +3,11 @@ pub mod find_up {
 
     pub fn find(path: &str, file: &str) -> std::option::Option<String> {
         let mut usable_path = path.clone().to_owned();
+
         loop {
             let mut file_path = usable_path.clone().to_owned();
             file_path.push('/');
-            file_path.push_str(file.clone());
+            file_path.push_str(file);
 
             if path::Path::new(&file_path).exists() {
                 return Some(file_path);

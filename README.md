@@ -25,10 +25,13 @@ use find_up::find;
 fn main() {
     let current_dir = env::current_dir().unwrap();
     let current_dir_path = current_dir.to_str().unwrap();
-    let find_unicorn = find_up::find(current_dir_path, "unicorn.png");
 
-    if test_path.is_some() {
-        println!("{}", test_path.unwrap());
+    let find_unicorn = find_up::find("unicorn.png");
+    let find_unicorn_from_here = find_up::find_in(current_dir_path, "unicorn.png");
+
+    if find_unicorn.is_some() {
+        println!("{}", find_unicorn.unwrap());
+	println!("{}", find_unicorn_from_here.unwrap());
     } else {
         println!("File not found!");
     }
@@ -43,3 +46,4 @@ fn main() {
 This project is inspired by [find-up](https://github.com/sindresorhus/find-up), a JavaScript library by [Sindre Sorhus](https://github.com/sindresorhus) built with the same end goal. It is a popular add on for building CLI and simple package managers with Node.js.
 
 **Note:** This is still in early development phase and as such is not available as a public crate.
+

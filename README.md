@@ -27,7 +27,7 @@ fn main() {
     let current_dir_path = current_dir.to_str().unwrap();
 
     let find_unicorn = find_up::find("unicorn.png");
-    let find_unicorn_from_here = find_up::find_in(current_dir_path, "unicorn.png");
+    let find_unicorn_from_here = find_up::find_up(current_dir_path, "unicorn.png");
 
     if find_unicorn.is_some() {
         println!("{}", find_unicorn.unwrap());

@@ -6,10 +6,41 @@ pub mod find_up {
         let current_dir = env::current_dir().unwrap();
         let path = current_dir.to_str().unwrap();
 
-        return find_in(path, file);
+        return find_up(path, file);
     }
 
-    pub fn find_in(path: &str, file: &str) -> std::option::Option<String> {
+    pub fn find_dir(file: &str) -> std::option::Option<String> {
+        let current_dir = env::current_dir().unwrap();
+        let path = current_dir.to_str().unwrap();
+
+        let dir = find_up(path, file);
+        if dir.is_some() {
+            let dir_path = dir.unwrap();
+            if path::Path::new(&dir_path).is_dir() {
+                return Some(dir_path);
+            } else {
+                return None;
+            }
+        }
+
+        return None;
+    }
+
+    pub fn find_up_dir(path: &str, file: &str) -> std::option::Option<String> {
+        let dir = find_up(path, file);
+        if dir.is_some() {
+            let dir_path = dir.unwrap();
+            if path::Path::new(&dir_path).is_dir() {
+                return Some(dir_path);
+            } else {
+                return None;
+            }
+        }
+
+        return None;
+    }
+
+    pub fn find_up(path: &str, file: &str) -> std::option::Option<String> {
         let mut usable_path = path.clone().to_owned();
 
         loop {
@@ -46,7 +77,7 @@ mod tests {
         let path = current_dir.to_str().unwrap();
 
         let toml_path_from_here = find_up::find("Cargo.toml");
-        let toml_path = find_up::find_in(path, "Cargo.toml");
+        let toml_path = find_up::find_up(path, "Cargo.toml");
 
         assert_eq!(toml_path_from_here.is_some(), true);
         assert_eq!(toml_path.is_some(), true);
@@ -66,7 +97,7 @@ mod tests {
     fn outside_test() {
         let current_dir = env::current_dir().unwrap();
         let path = current_dir.to_str().unwrap();
-        let test_path = find_up::find_in(path, "test.txt");
+        let test_path = find_up::find_up(path, "test.txt");
         let test_path_from_here = find_up::find("test.txt");
 
         let file_dir = env::current_dir().unwrap();
@@ -80,6 +111,40 @@ mod tests {
         let test_path_from_here_result = test_path_from_here.unwrap();
         assert_eq!(test_path_result, test_path_from_here_result);
         assert_eq!(test_path_result, file_path);
+    }
+
+    #[test]
+    fn none_test() { 
+        let current_dir = env::current_dir().unwrap();
+        let path = current_dir.to_str().unwrap();
+
+        let no_path_from_here = find_up::find("Cargo.rofl");
+        let no_path = find_up::find_up(path, "Cargo.rofl");
+
+        assert_eq!(no_path.is_none(), true);
+        assert_eq!(no_path_from_here.is_none(), true);
+    }
+
+    #[test]
+    fn dir_test() {
+        let current_dir = env::current_dir().unwrap();
+        let path = current_dir.to_str().unwrap();
+
+        let dir_path_from_here = find_up::find_dir("src");
+        let dir_path = find_up::find_up_dir(path, "src");
+
+        assert_eq!(dir_path_from_here.is_some(), true);
+        assert_eq!(dir_path.is_some(), true);
+
+        let dir_file = env::current_dir().unwrap();
+        let mut first_dir_path = dir_file.to_string_lossy().into_owned();
+        first_dir_path.push_str("/src");
+
+        let dir_path_result = dir_path.unwrap();
+        let dir_path_from_here_result = dir_path_from_here.unwrap();
+
+        assert_eq!(dir_path_result, first_dir_path);
+        assert_eq!(dir_path_from_here_result, first_dir_path);
     }
 }
 

@@ -5,7 +5,7 @@ pub mod find_up {
     pub fn find(file: &str) -> std::option::Option<String> {
         let current_dir = env::current_dir().unwrap();
         let path = current_dir.to_str().unwrap();
-
+        
         return find_up(path, file);
     }
 
@@ -45,13 +45,24 @@ pub mod find_up {
 
         loop {
             let mut file_path = usable_path.clone().to_owned();
-            file_path.push('/');
+            
+            if cfg!(windows) {
+                file_path.push('\\');
+            } else {
+                file_path.push('/');
+            }
+
             file_path.push_str(file);
 
             if path::Path::new(&file_path).exists() {
                 return Some(file_path);
             } else {
-                let index: std::option::Option<usize> = usable_path.rfind('/');
+                let index: std::option::Option<usize> = if cfg!(windows) {
+                    usable_path.rfind('\\')
+                } else {
+                    usable_path.rfind('/')
+                };
+
                 if !index.is_some() {
                     return None;
                 }
@@ -84,7 +95,11 @@ mod tests {
 
         let toml_file = env::current_dir().unwrap();
         let mut first_toml_path = toml_file.to_string_lossy().into_owned();
-        first_toml_path.push_str("/Cargo.toml");
+        if cfg!(windows) {
+            first_toml_path.push_str("\\Cargo.toml");
+        } else {
+            first_toml_path.push_str("/Cargo.toml");
+        }
 
         let toml_path_result = toml_path.unwrap();
         let toml_path_from_here_result = toml_path_from_here.unwrap();
@@ -102,11 +117,21 @@ mod tests {
 
         let file_dir = env::current_dir().unwrap();
         let mut file_path = String::from(file_dir.to_str().unwrap());
-        let index: std::option::Option<usize> = file_path.rfind('/');
+        let index: std::option::Option<usize> = if cfg!(windows) {
+            file_path.rfind('\\')
+        } else {
+            file_path.rfind('/')
+        };
+
         let trim_start = index.unwrap();
         let trim_end = file_path.len();
-        file_path.replace_range(trim_start..trim_end, "/test.txt");
-        
+
+        if cfg!(windows) {
+            file_path.replace_range(trim_start..trim_end, "\\test.txt");
+        } else {
+            file_path.replace_range(trim_start..trim_end, "/test.txt");
+        }
+
         let test_path_result = test_path.unwrap();
         let test_path_from_here_result = test_path_from_here.unwrap();
         assert_eq!(test_path_result, test_path_from_here_result);
@@ -138,7 +163,11 @@ mod tests {
 
         let dir_file = env::current_dir().unwrap();
         let mut first_dir_path = dir_file.to_string_lossy().into_owned();
-        first_dir_path.push_str("/src");
+        if cfg!(windows) {
+            first_dir_path.push_str("\\src");
+        } else {
+            first_dir_path.push_str("/src");
+        }
 
         let dir_path_result = dir_path.unwrap();
         let dir_path_from_here_result = dir_path_from_here.unwrap();

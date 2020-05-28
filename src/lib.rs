@@ -1,4 +1,5 @@
 pub mod find_up {
+    use std::fs;
     use std::path;
     use std::env;
 
@@ -9,35 +10,91 @@ pub mod find_up {
         return find_up(path, file);
     }
 
-    pub fn find_dir(file: &str) -> std::option::Option<String> {
+    pub fn find_dir(dir: &str) -> std::option::Option<String> {
         let current_dir = env::current_dir().unwrap();
         let path = current_dir.to_str().unwrap();
 
-        let dir = find_up(path, file);
-        if dir.is_some() {
-            let dir_path = dir.unwrap();
-            if path::Path::new(&dir_path).is_dir() {
-                return Some(dir_path);
-            } else {
-                return None;
-            }
-        }
-
-        return None;
+        return find_up_dir(path, dir);
     }
 
-    pub fn find_up_dir(path: &str, file: &str) -> std::option::Option<String> {
-        let dir = find_up(path, file);
-        if dir.is_some() {
-            let dir_path = dir.unwrap();
-            if path::Path::new(&dir_path).is_dir() {
-                return Some(dir_path);
+    pub fn find_symlink(link: &str) -> std::option::Option<String> {
+        let current_dir = env::current_dir().unwrap();
+        let path = current_dir.to_str().unwrap();
+
+        return find_up_symlink(path, link);
+    }
+
+    pub fn find_up_symlink(path: &str, link: &str) -> std::option::Option<String> {
+        let mut usable_path = path.clone().to_owned();
+
+        loop {
+            let mut link_path = usable_path.clone().to_owned();
+            
+            if cfg!(windows) {
+                link_path.push('\\');
             } else {
-                return None;
+                link_path.push('/');
+            }
+
+            link_path.push_str(link);
+            let read_link = fs::read_link(link_path.clone().to_owned());
+            let is_link: bool = match read_link {
+                Ok(_link) => true,
+                Err(_error) => false,
+            };
+
+            if path::Path::new(&link_path).exists() && is_link {
+                return Some(link_path);
+            } else {
+                let index: std::option::Option<usize> = if cfg!(windows) {
+                    usable_path.rfind('\\')
+                } else {
+                    usable_path.rfind('/')
+                };
+
+                if !index.is_some() {
+                    return None;
+                }
+
+                let trim_start = index.unwrap();
+                let trim_end = usable_path.len();
+                usable_path.replace_range(trim_start..trim_end, "");
             }
         }
+    }
 
-        return None;
+    pub fn find_up_dir(path: &str, dir: &str) -> std::option::Option<String> {
+        let mut usable_path = path.clone().to_owned();
+
+        loop {
+            let mut dir_path = usable_path.clone().to_owned();
+            
+            if cfg!(windows) {
+                dir_path.push('\\');
+            } else {
+                dir_path.push('/');
+            }
+
+            dir_path.push_str(dir);
+
+            if path::Path::new(&dir_path).exists() && path::Path::new(&dir_path).is_dir() {
+                return Some(dir_path);
+            } else {
+                let index: std::option::Option<usize> = if cfg!(windows) {
+                    usable_path.rfind('\\')
+                } else {
+                    usable_path.rfind('/')
+                };
+
+                if !index.is_some() {
+                    return None;
+                }
+
+                let trim_start = index.unwrap();
+                let trim_end = usable_path.len();
+                usable_path.replace_range(trim_start..trim_end, "");
+            }
+        }
     }
 
     pub fn find_up(path: &str, file: &str) -> std::option::Option<String> {
@@ -174,6 +231,22 @@ mod tests {
 
         assert_eq!(dir_path_result, first_dir_path);
         assert_eq!(dir_path_from_here_result, first_dir_path);
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    #[test]
+    fn symlink_test() {
+        let link_path = find_up::find_up_symlink("", "bin");
+        let link_path_from_here = find_up::find_symlink("bin");
+
+        assert_eq!(link_path.is_some(), true);
+        assert_eq!(link_path_from_here.is_some(), true);
+
+        let link_path_result = link_path.unwrap();
+        let link_path_from_here_result = link_path_from_here.unwrap();
+
+        assert_eq!(link_path_result, "/bin");
+        assert_eq!(link_path_from_here_result, "/bin");
     }
 }
 

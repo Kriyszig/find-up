@@ -26,6 +26,10 @@ pub mod find_up {
 
     pub fn find_up_symlink(path: &str, link: &str) -> std::option::Option<String> {
         let mut usable_path = path.clone().to_owned();
+        if (cfg!(windows) && usable_path.ends_with('\\')) || usable_path.ends_with('/') {
+            let trim_end = usable_path.len();
+            usable_path.replace_range(trim_end - 1..trim_end, "");
+        }
 
         loop {
             let mut link_path = usable_path.clone().to_owned();
@@ -65,6 +69,10 @@ pub mod find_up {
 
     pub fn find_up_dir(path: &str, dir: &str) -> std::option::Option<String> {
         let mut usable_path = path.clone().to_owned();
+        if (cfg!(windows) && usable_path.ends_with('\\')) || usable_path.ends_with('/') {
+            let trim_end = usable_path.len();
+            usable_path.replace_range(trim_end - 1..trim_end, "");
+        }
 
         loop {
             let mut dir_path = usable_path.clone().to_owned();
@@ -99,6 +107,10 @@ pub mod find_up {
 
     pub fn find_up(path: &str, file: &str) -> std::option::Option<String> {
         let mut usable_path = path.clone().to_owned();
+        if (cfg!(windows) && usable_path.ends_with('\\')) || usable_path.ends_with('/') {
+            let trim_end = usable_path.len();
+            usable_path.replace_range(trim_end - 1..trim_end, "");
+        }
 
         loop {
             let mut file_path = usable_path.clone().to_owned();
@@ -236,7 +248,7 @@ mod tests {
     #[cfg(not(target_os = "windows"))]
     #[test]
     fn symlink_test() {
-        let link_path = find_up::find_up_symlink("", "bin");
+        let link_path = find_up::find_up_symlink("/", "bin");
         let link_path_from_here = find_up::find_symlink("bin");
 
         assert_eq!(link_path.is_some(), true);
